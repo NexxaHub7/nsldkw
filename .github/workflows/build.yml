@@ -14,11 +14,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
+      - name: Descomprimir proyecto
+        run: |
+          if [ -z "$(find . -name settings.gradle.kts -not -path './.git/*' | head -1)" ]; then
+            ZIP=$(find . -maxdepth 1 -name '*.zip' | head -1)
+            echo "Descomprimiendo: $ZIP"
+            mkdir -p _proj && unzip -q "$ZIP" -d _proj
+          fi
       - name: Aceptar licencias del SDK
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
       - name: Build
         run: |
-          DIR=$(dirname "$(find . -name settings.gradle.kts -not -path './.git/*' | head -1)")
+          SET=$(find . -name settings.gradle.kts -not -path './.git/*' | head -1)
+          if [ -z "$SET" ]; then echo "No encontré el proyecto (settings.gradle.kts)"; exit 1; fi
+          DIR=$(dirname "$SET")
           echo "Proyecto en: $DIR"
           cd "$DIR"
           gradle assembleRelease --no-daemon
